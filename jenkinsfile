@@ -34,6 +34,17 @@ pipeline {
               }
             }
         }
+         stage('OWASP FS SCAN') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudit --disableNodeAudit', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('TRIVY FS SCAN') {
+            steps {
+                sh 'trivy fs .'
+            }
+        }
         stage('package') {
             steps {
               sh 'mvn install'
@@ -73,19 +84,24 @@ pipeline {
               }
             }
         }
+        stage("TRIVY"){
+            steps{
+                sh 'trivy image $IMAGE_NAME' 
+            }
+        }
          stage('docker push') {
             steps {
              script {
+             withDockerRegistry(credentialsId: 'docker-cred') {
                     sh 'docker push $IMAGE_NAME'
               }
-            }
-         }    
+             }
+           } 
+         } 
         stage('docker container') {
             steps {
              script {
-                
                     sh 'docker run -itd --name $CONTAINER_NAME -p 8081:8080 $IMAGE_NAME'
-                 
               }
             }
         }
@@ -101,4 +117,5 @@ pipeline {
             
         }
     }
-}
+ }
+
