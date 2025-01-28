@@ -6,8 +6,15 @@ pipeline {
     agent any
      environment {
         SCANNER_HOME = tool 'sonarqube'
-    }
+        IMAGE_NAME = "manjuappu1375/java-spring" // Name of the image created in Jenkins
+        CONTAINER_NAME = "java-spring" // Name of the container created in Jenkins
+     }
     stages {
+        stage('clean worspace') {
+        steps {
+           cleanWs()
+           }
+        }
         stage('git checkout') {
             steps {
              git 'https://github.com/manjuappu1375/Java-Springboot-master.git'
@@ -21,9 +28,9 @@ pipeline {
          stage('code analysis') {
             steps {
               withSonarQubeEnv('sonar-server') {
-               sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=CI-CD-Project \
+               sh ''' $SCANNER_HOME/bin/sonar-scanner -Dsonar.projectName=Java-Springboot-master \
                -Dsonar.java.binaries=. \
-               -Dsonar.projectKey=CI-CD-Project'''
+               -Dsonar.projectKey=Java-Springboot-master'''
               }
             }
         }
@@ -62,17 +69,14 @@ pipeline {
          stage('docker build') {
             steps {
              script {
-                    sh 'docker build -t spring-boot .'
+                    sh 'docker build -t $IMAGE_NAME .'
               }
             }
         }
          stage('docker push') {
             steps {
              script {
-                
-                    sh 'docker tag spring-boot manjuappu1375/spring-boot'
-                    sh 'docker push manjuappu1375/spring-boot'
-                  
+                    sh 'docker push $IMAGE_NAME'
               }
             }
          }    
@@ -80,7 +84,7 @@ pipeline {
             steps {
              script {
                 
-                    sh 'docker run -itd --name java-spring -p 8381:8080 spring-boot'
+                    sh 'docker run -itd --name $CONTAINER_NAME -p 8081:8080 $IMAGE_NAME'
                  
               }
             }
